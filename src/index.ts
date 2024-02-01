@@ -1,18 +1,20 @@
 import express from "express";
 import http from "http";
 import "dotenv/config";
-import { searchUsers } from "./routes/searchUsers";
-import { getMessages } from "./routes/getMessages";
-import { getThreads } from "./routes/getThreads";
-import { getThread } from "./routes/getThread";
-import { createThread } from "./routes/createThread";
-import { sendMessage } from "./routes/sendMessage";
+import {
+  sendMessageRoute,
+  createThreadRoute,
+  getThreadRoute,
+  searchUsersRoute,
+  getMessagesRoute,
+  getThreadsRoute,
+} from "./routes/index";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { ServerEvent, ServerEventType, Thread } from "@textshq/platform-sdk";
 import { randomUUID } from "crypto";
-import { initWebSocketServer, wss } from "./lib/ws";
-import WebSocket from "ws";
+import { initWebSocketServer } from "./lib/ws";
+import { sendEvent } from "./lib/helpers";
 
 const app = express();
 const server = http.createServer(app);
@@ -49,11 +51,7 @@ app.post("/", (req, res) => {
     ],
   };
 
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(event));
-    }
-  });
+  sendEvent(event);
   res.send("Got a POST request");
 });
 app.post("/thread", (req, res) => {
@@ -81,20 +79,16 @@ app.post("/thread", (req, res) => {
     entries: [thread],
   };
 
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(event));
-    }
-  });
+  sendEvent(event);
   res.send("Got a POST request");
 });
 
-app.post("/api/searchUsers", searchUsers);
-app.post("/api/getMessages", getMessages);
-app.post("/api/getThreads", getThreads);
-app.post("/api/getThread", getThread);
-app.post("/api/createThread", createThread);
-app.post("/api/sendMessage", sendMessage);
+app.post("/api/searchUsers", searchUsersRoute);
+app.post("/api/getMessages", getMessagesRoute);
+app.post("/api/getThreads", getThreadsRoute);
+app.post("/api/getThread", getThreadRoute);
+app.post("/api/createThread", createThreadRoute);
+app.post("/api/sendMessage", sendMessageRoute);
 
 // Define the port and start server
 const PORT = process.env.PORT || 8080;
