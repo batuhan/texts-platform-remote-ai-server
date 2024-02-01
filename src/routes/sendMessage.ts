@@ -5,14 +5,19 @@ import { messages } from "../db/schema";
 import { db } from "../db";
 import { Message, ServerEvent, ServerEventType } from "@textshq/platform-sdk";
 import { wss } from "../lib/ws";
+import WebSocket from "ws";
 
 export const sendMessage = async (req: Request, res: Response) => {
+  console.log("sendMessage");
+
   const { threadID, content, options, userMessage }: SendMessageRequest =
     req.body;
 
   const dbUserMessage: MessageDBInsert = {
     ...userMessage,
+    timestamp: new Date(userMessage.timestamp),
     seen: true,
+    threadID,
   };
   await db.insert(messages).values(dbUserMessage);
 
@@ -22,6 +27,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     text: `Response`,
     senderID: "2",
     isSender: false,
+    threadID,
   };
 
   const dbResponseMessage: MessageDBInsert = {
@@ -57,5 +63,21 @@ export const sendMessage = async (req: Request, res: Response) => {
   res.json({ data: undefined });
   */
 
-  res.json({ data: responseMessage });
+  // res.json({ data: responseMessage });
+
+  const event: ServerEvent = {
+    type: ServerEventType.STATE_SYNC,
+    objectName: "message",
+    mutationType: "upsert",
+    objectIDs: { threadID },
+    entries: [responseMessage],
+  };
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(event));
+    }
+  });
+
+  res.json({ data: undefined });
 };

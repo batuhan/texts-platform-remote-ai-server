@@ -4,6 +4,8 @@ import { dbThreadToTextsThread } from "../lib/helpers";
 import { GetThreadRequest } from "../lib/types";
 
 export const getThread = async (req: Request, res: Response) => {
+  console.log("getThread");
+  
   const { threadID }: GetThreadRequest = req.body;
 
   const dbThread = await selectThread(threadID);

@@ -7,6 +7,8 @@ import {
 } from "../lib/types";
 
 export const getThreads = async (req: Request, res: Response) => {
+  console.log("getThreads");
+
   const { pagination }: GetThreadsRequest = req.body;
 
   const dbThreads = await selectThreads();

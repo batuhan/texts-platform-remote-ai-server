@@ -4,6 +4,8 @@ import { dbMessageToTextsMessage } from "../lib/helpers";
 import { GetMessagesRequest } from "../lib/types";
 
 export const getMessages = async (req: Request, res: Response) => {
+  console.log("getMessages");
+  
   const { threadID, pagination }: GetMessagesRequest = req.body;
 
   const dbMessages = await selectMessages(threadID);

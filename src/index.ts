@@ -12,6 +12,7 @@ import { users } from "./db/schema";
 import { ServerEvent, ServerEventType, Thread } from "@textshq/platform-sdk";
 import { randomUUID } from "crypto";
 import { initWebSocketServer, wss } from "./lib/ws";
+import WebSocket from "ws";
 
 const app = express();
 const server = http.createServer(app);
@@ -36,7 +37,7 @@ app.post("/", (req, res) => {
     type: ServerEventType.STATE_SYNC,
     objectName: "message",
     mutationType: "upsert",
-    objectIDs: { threadID: "e2132e39-f947-48ee-9345-497ddc30ea46" },
+    objectIDs: { threadID: "98938bc5-2a07-4408-8963-950888dc5dc5" },
     entries: [
       {
         id: randomUUID(),
@@ -57,11 +58,12 @@ app.post("/", (req, res) => {
 });
 app.post("/thread", (req, res) => {
   const thread: Thread = {
-    id: "test",
+    id: "test2",
     type: "single",
     title: "Chat Test2",
     isUnread: false,
     isReadOnly: false,
+    timestamp: new Date(),
     messages: {
       items: [],
       hasMore: false,

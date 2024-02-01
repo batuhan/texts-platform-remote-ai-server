@@ -4,6 +4,8 @@ import { db } from "../db";
 import { dbUserToTextsUser } from "../lib/helpers";
 
 export const searchUsers = async (req: Request, res: Response) => {
+  console.log("searchUsers");
+
   const allUsers = await db.select().from(users);
 
   if (!allUsers) {

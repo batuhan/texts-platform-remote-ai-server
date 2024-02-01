@@ -6,6 +6,8 @@ import { randomUUID } from "crypto";
 import { Message, Thread, ThreadType } from "@textshq/platform-sdk";
 
 export const createThread = async (req: Request, res: Response) => {
+  console.log("createThread");
+  
   const { userIDs, title, messageText }: CreateThreadRequest = req.body;
 
   const userId = userIDs[0];
