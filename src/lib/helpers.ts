@@ -1,11 +1,21 @@
-import { Message, MessageBehavior, Thread, User } from "@textshq/platform-sdk";
+import {
+  Message,
+  MessageBehavior,
+  ServerEvent,
+  Thread,
+  User,
+} from "@textshq/platform-sdk";
 import {
   MessageDBSelect,
   ThreadWithMessagesAndParticipants,
   UserDBSelect,
 } from "./types";
+import { wss } from "./ws";
+import WebSocket from "ws";
 
-export function dbThreadToTextsThread(obj: ThreadWithMessagesAndParticipants) {
+export function mapDbThreadToTextsThread(
+  obj: ThreadWithMessagesAndParticipants
+) {
   const thread: Thread = {
     id: obj.id,
     title: obj.title || undefined,
@@ -47,7 +57,7 @@ export function dbThreadToTextsThread(obj: ThreadWithMessagesAndParticipants) {
   return thread;
 }
 
-export function dbMessageToTextsMessage(obj: MessageDBSelect) {
+export function mapDbMessageToTextsMessage(obj: MessageDBSelect) {
   const message: Message = {
     id: obj.id,
     timestamp: obj.timestamp || new Date(),
@@ -70,7 +80,7 @@ export function dbMessageToTextsMessage(obj: MessageDBSelect) {
   return message;
 }
 
-export function dbUserToTextsUser(obj: UserDBSelect) {
+export function mapDbUserToTextsUser(obj: UserDBSelect) {
   const user: User = {
     id: obj.id,
     username: obj.username || undefined,
@@ -85,4 +95,12 @@ export function dbUserToTextsUser(obj: UserDBSelect) {
   };
 
   return user;
+}
+
+export function sendEvent(event: ServerEvent) {
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(event));
+    }
+  });
 }

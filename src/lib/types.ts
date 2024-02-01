@@ -4,7 +4,10 @@ import {
   MessageSendOptions,
   PaginationArg,
   Thread,
+  ThreadFolderName,
+  ThreadID,
   User,
+  UserID,
 } from "@textshq/platform-sdk";
 import { messages, threads, users } from "../db/schema";
 import { selectThread } from "../db/repo";
@@ -29,26 +32,27 @@ export type ThreadWithMessagesAndParticipants = Awaited<
 >;
 
 export type CreateThreadRequest = {
-  userIDs: string[];
+  userIDs: UserID[];
   title?: string;
   messageText?: string;
 };
 
 export type GetMessagesRequest = {
-  threadID: string;
+  threadID: ThreadID;
   pagination?: PaginationArg;
 };
 
 export type GetThreadRequest = {
-  threadID: string;
+  threadID: ThreadID;
 };
 
 export type GetThreadsRequest = {
+  inboxName: ThreadFolderName;
   pagination?: PaginationArg;
 };
 
 export type SendMessageRequest = {
-  threadID: string;
+  threadID: ThreadID;
   content: MessageContent;
   userMessage: Message;
   options?: MessageSendOptions;
