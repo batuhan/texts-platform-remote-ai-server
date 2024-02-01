@@ -1,0 +1,20 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1706757549012,
+      "tag": "0000_tough_joystick",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1706798830059,
+      "tag": "0001_remarkable_cobalt_man",
+      "breakpoints": true
+    }
+  ]
+}

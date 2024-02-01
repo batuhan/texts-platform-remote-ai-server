@@ -1,0 +1,382 @@
+{
+  "id": "efb009ec-d3db-4749-8661-72e61232cce2",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "messages": {
+      "name": "messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edited_timestamp": {
+          "name": "edited_timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expires_in_seconds": {
+          "name": "expires_in_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sender_id": {
+          "name": "sender_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "text": {
+          "name": "text",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seen": {
+          "name": "seen",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_delivered": {
+          "name": "is_delivered",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_hidden": {
+          "name": "is_hidden",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_sender": {
+          "name": "is_sender",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_action": {
+          "name": "is_action",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_deleted": {
+          "name": "is_deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_errored": {
+          "name": "is_errored",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "behavior": {
+          "name": "behavior",
+          "type": "message_behavior",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "thread_id": {
+          "name": "thread_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "participants": {
+      "name": "participants",
+      "schema": "",
+      "columns": {
+        "thread_id": {
+          "name": "thread_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "participants_thread_id_threads_id_fk": {
+          "name": "participants_thread_id_threads_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "threads",
+          "columnsFrom": [
+            "thread_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "participants_user_id_users_id_fk": {
+          "name": "participants_user_id_users_id_fk",
+          "tableFrom": "participants",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "participants_thread_id_user_id_pk": {
+          "name": "participants_thread_id_user_id_pk",
+          "columns": [
+            "thread_id",
+            "user_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {}
+    },
+    "table": {
+      "name": "table",
+      "schema": "",
+      "columns": {
+        "mood": {
+          "name": "mood",
+          "type": "mood",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "threads": {
+      "name": "threads",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_unread": {
+          "name": "is_unread",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "last_read_message_id": {
+          "name": "last_read_message_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_read_only": {
+          "name": "is_read_only",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "is_archived": {
+          "name": "is_archived",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_pinned": {
+          "name": "is_pinned",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "type",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'single'"
+        },
+        "timestamp": {
+          "name": "timestamp",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "img_url": {
+          "name": "img_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message_expiry_seconds": {
+          "name": "message_expiry_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "img_url": {
+          "name": "img_url",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_verified": {
+          "name": "is_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cannot_message": {
+          "name": "cannot_message",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_self": {
+          "name": "is_self",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    }
+  },
+  "enums": {
+    "message_behavior": {
+      "name": "message_behavior",
+      "values": {
+        "silent": "silent",
+        "keep_read": "keep_read",
+        "dont_notify": "dont_notify"
+      }
+    },
+    "mood": {
+      "name": "mood",
+      "values": {
+        "sad": "sad",
+        "ok": "ok",
+        "happy": "happy"
+      }
+    },
+    "type": {
+      "name": "type",
+      "values": {
+        "single": "single",
+        "group": "group",
+        "channel": "channel",
+        "broadcast": "broadcast"
+      }
+    }
+  },
+  "schemas": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
