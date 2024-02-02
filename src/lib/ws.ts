@@ -23,6 +23,7 @@ function initWebSocketServer(server: http.Server): WebSocket.Server {
     });
 
     ws.on("close", () => {
+      usersMap.delete(userID);
       console.log("Client disconnected");
     });
   });
