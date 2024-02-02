@@ -1,10 +1,10 @@
 import WebSocket from "ws";
 import http from "http";
-import { ServerEvent } from "@textshq/platform-sdk";
+import { ServerEvent } from "./types";
 
 let wss: WebSocket.Server;
 
-export const usersMap = new Map<string, WebSocket>();
+export const wsMap = new Map<string, WebSocket>();
 
 function initWebSocketServer(server: http.Server): WebSocket.Server {
   wss = new WebSocket.Server({ server });
@@ -17,13 +17,13 @@ function initWebSocketServer(server: http.Server): WebSocket.Server {
       return;
     }
 
-    usersMap.set(userID, ws);
+    wsMap.set(userID, ws);
     ws.on("message", (message) => {
       console.log("Received message: %s", message);
     });
 
     ws.on("close", () => {
-      usersMap.delete(userID);
+      wsMap.delete(userID);
       console.log("Client disconnected");
     });
   });
@@ -32,7 +32,7 @@ function initWebSocketServer(server: http.Server): WebSocket.Server {
 }
 
 function sendEvent(event: ServerEvent, userID: string) {
-  const ws = usersMap.get(userID);
+  const ws = wsMap.get(userID);
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(event));
   }

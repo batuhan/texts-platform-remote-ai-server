@@ -12,9 +12,9 @@ import {
 } from "./platform/routes/index";
 import { db } from "./db";
 import { users } from "./db/schema";
-import { ServerEvent, ServerEventType, Thread } from "@textshq/platform-sdk";
 import { randomUUID } from "crypto";
 import { initWebSocketServer, sendEvent } from "./lib/ws";
+import { ServerEvent, ServerEventType, Thread } from "./lib/types";
 
 const app = express();
 const server = http.createServer(app);
