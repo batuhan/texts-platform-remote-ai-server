@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -10,7 +11,6 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-export const moodEnum = pgEnum("mood", ["sad", "ok", "happy"]);
 export const threadTypeEnum = pgEnum("type", [
   "single",
   "group",
@@ -23,10 +23,6 @@ export const messageBehaviorEnum = pgEnum("message_behavior", [
   "keep_read",
   "dont_notify",
 ]);
-
-export const table = pgTable("table", {
-  mood: moodEnum("mood"),
-});
 
 export const threads = pgTable("threads", {
   id: varchar("id").primaryKey(),
@@ -42,6 +38,7 @@ export const threads = pgTable("threads", {
   createdAt: timestamp("created_at").defaultNow(),
   description: text("description"),
   messageExpirySeconds: integer("message_expiry_seconds"),
+  extra: jsonb("extra"),
 });
 
 export const threadsRelations = relations(threads, ({ many }) => ({
@@ -66,6 +63,7 @@ export const messages = pgTable("messages", {
   behavior: messageBehaviorEnum("behavior"),
   accountID: varchar("account_id"),
   threadID: varchar("thread_id"),
+  extra: jsonb("extra"),
 });
 
 export const messagesRelations = relations(messages, ({ one }) => ({

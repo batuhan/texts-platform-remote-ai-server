@@ -15,6 +15,20 @@
       "when": 1706798830059,
       "tag": "0001_remarkable_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1706899055887,
+      "tag": "0002_dizzy_star_brand",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1706899079437,
+      "tag": "0003_tiresome_colonel_america",
+      "breakpoints": true
     }
   ]
 }
