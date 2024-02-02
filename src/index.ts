@@ -8,13 +8,13 @@ import {
   searchUsersRoute,
   getMessagesRoute,
   getThreadsRoute,
-} from "./routes/index";
+  loginRoute,
+} from "./platform/routes/index";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { ServerEvent, ServerEventType, Thread } from "@textshq/platform-sdk";
 import { randomUUID } from "crypto";
-import { initWebSocketServer } from "./lib/ws";
-import { sendEvent } from "./lib/helpers";
+import { initWebSocketServer, sendEvent } from "./lib/ws";
 
 const app = express();
 const server = http.createServer(app);
@@ -51,7 +51,7 @@ app.post("/", (req, res) => {
     ],
   };
 
-  sendEvent(event);
+  sendEvent(event, "1");
   res.send("Got a POST request");
 });
 app.post("/thread", (req, res) => {
@@ -79,10 +79,11 @@ app.post("/thread", (req, res) => {
     entries: [thread],
   };
 
-  sendEvent(event);
+  sendEvent(event, "1");
   res.send("Got a POST request");
 });
 
+app.post("/api/login", loginRoute);
 app.post("/api/searchUsers", searchUsersRoute);
 app.post("/api/getMessages", getMessagesRoute);
 app.post("/api/getThreads", getThreadsRoute);

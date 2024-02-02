@@ -1,4 +1,5 @@
 import {
+  LoginCreds,
   Message,
   MessageContent,
   MessageSendOptions,
@@ -31,29 +32,45 @@ export type ThreadWithMessagesAndParticipants = Awaited<
   ReturnType<typeof selectThread>
 >;
 
-export type CreateThreadRequest = {
+interface CredentialProp {
+  credential?: string;
+}
+
+interface UserIDProp {
+  userID: UserID;
+}
+
+export interface CreateThreadRequest extends CredentialProp, UserIDProp {
   userIDs: UserID[];
   title?: string;
   messageText?: string;
-};
+}
 
-export type GetMessagesRequest = {
+export interface GetMessagesRequest extends CredentialProp, UserIDProp {
   threadID: ThreadID;
   pagination?: PaginationArg;
-};
+}
 
-export type GetThreadRequest = {
+export interface GetThreadRequest extends CredentialProp, UserIDProp {
   threadID: ThreadID;
-};
+}
 
-export type GetThreadsRequest = {
+export interface GetThreadsRequest extends CredentialProp, UserIDProp {
   inboxName: ThreadFolderName;
   pagination?: PaginationArg;
-};
+}
 
-export type SendMessageRequest = {
+export interface SendMessageRequest extends CredentialProp, UserIDProp {
   threadID: ThreadID;
   content: MessageContent;
   userMessage: Message;
   options?: MessageSendOptions;
-};
+}
+
+export interface SearchUsersRequest extends CredentialProp, UserIDProp {
+  typed: string;
+}
+
+export interface LoginRequest {
+  creds: LoginCreds;
+}

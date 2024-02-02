@@ -1,7 +1,6 @@
 import {
   Message,
   MessageBehavior,
-  ServerEvent,
   Thread,
   User,
 } from "@textshq/platform-sdk";
@@ -10,8 +9,6 @@ import {
   ThreadWithMessagesAndParticipants,
   UserDBSelect,
 } from "./types";
-import { wss } from "./ws";
-import WebSocket from "ws";
 
 export function mapDbThreadToTextsThread(
   obj: ThreadWithMessagesAndParticipants
@@ -95,12 +92,4 @@ export function mapDbUserToTextsUser(obj: UserDBSelect) {
   };
 
   return user;
-}
-
-export function sendEvent(event: ServerEvent) {
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify(event));
-    }
-  });
 }

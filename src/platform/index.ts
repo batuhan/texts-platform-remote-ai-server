@@ -11,6 +11,8 @@ import {
   User,
   MessageContent,
   MessageSendOptions,
+  CurrentUser,
+  LoginCreds,
 } from "@textshq/platform-sdk";
 import { randomUUID } from "crypto";
 import {
@@ -161,19 +163,13 @@ export async function searchUsers(): Promise<User[]> {
 
 /* 
    Produces a response message.
-   User message will automatically return in platform's sendMessage function, 
-   so this function just produces a response, and returns it in 2 ways so the state is updated.
-   1 - After saving user and response message to the database, just return the response message in Message type.
-   Platform will automatically update the state with this message.
-   2 - Return undefined from this function, and instead emit a websocket event with the response message, 
-   so the state is updated in the client. 
 */
 export async function sendMessage(
   userMessage: Message,
   threadID: ThreadID,
   content: MessageContent,
   options?: MessageSendOptions
-): Promise<Message | undefined> {
+): Promise<Message> {
   const dbUserMessage: MessageDBInsert = {
     ...userMessage,
     timestamp: new Date(userMessage.timestamp),
@@ -197,26 +193,23 @@ export async function sendMessage(
 
   await db.insert(messages).values([dbUserMessage, dbResponseMessage]);
 
-  /*
-    Examples of how to return the response message.
+  return responseMessage;
+}
 
-    1 - Send back the message, returned in platform-sdk Message type
-    return responseMessage;
-  
-    2 - First create a ServerEvent, then send the response message using sendEvent helper function through websocket.
-    Return undefined from this function.
-    const event: ServerEvent = {
-      type: ServerEventType.STATE_SYNC,
-      objectName: "message",
-      mutationType: "upsert",
-      objectIDs: { threadID },
-      entries: [responseMessage],
+/* 
+  Gets the loginCreds, does anything necessary for login and returns the current user
+*/
+export function login(creds: LoginCreds): CurrentUser | undefined {
+  if ("custom" in creds) {
+    const displayText = creds.custom.label;
+    const user: CurrentUser = {
+      id: randomUUID(),
+      username: "test",
+      displayText,
     };
 
-    sendEvent(event);
-  
+    return user;
+  } else {
     return undefined;
-  */
-
-  return responseMessage;
+  }
 }
