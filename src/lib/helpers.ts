@@ -1,13 +1,12 @@
 import {
   Message,
   MessageBehavior,
-  Thread,
-  User,
-} from "@textshq/platform-sdk";
-import {
   MessageDBSelect,
+  Thread,
   ThreadWithMessagesAndParticipants,
+  User,
   UserDBSelect,
+  UserID,
 } from "./types";
 
 export function mapDbThreadToTextsThread(
@@ -92,4 +91,12 @@ export function mapDbUserToTextsUser(obj: UserDBSelect) {
   };
 
   return user;
+}
+
+export const extraMap = new Map<string, any>();
+
+export function getExtra(userID:UserID){
+  const extra = extraMap.get(userID);
+
+  return extra;
 }

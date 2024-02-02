@@ -7,6 +7,8 @@ import {
   LoginRequest,
   SearchUsersRequest,
   SendMessageRequest,
+  ServerEvent,
+  ServerEventType,
 } from "../../lib/types";
 import {
   createThread,
@@ -17,61 +19,91 @@ import {
   searchUsers,
   sendMessage,
 } from "..";
-import { ServerEvent, ServerEventType } from "@textshq/platform-sdk";
 import { sendEvent } from "../../lib/ws";
+import { getExtra } from "../../lib/helpers";
 
+/*
+  @route /api/login
+  @method POST
+  @body { creds: Creds, currentUserID: UserID }
+  @response { data: { currentUser: CurrentUser, extra: any } }
+*/
 export const loginRoute = async (req: Request, res: Response) => {
   console.log("login");
-  const { creds }: LoginRequest = req.body;
-  const user = login(creds);
+  const { creds, currentUserID }: LoginRequest = req.body;
+  const user = login(creds, currentUserID);
 
   if (!user) {
     res.status(401).send({ data: undefined });
     return;
   }
 
-  res.send({ data: user });
+  const extra = getExtra(currentUserID);
+  res.send({ data: { currentUser: user, extra } });
 };
 
+/* 
+  @route /api/createThread
+  @method POST
+  @body { userIDs: UserID[], currentUserID: UserID, title?: string, messageText?: string }
+  @response { data: Thread }
+*/
 export const createThreadRoute = async (req: Request, res: Response) => {
   console.log("createThread");
-  const {
-    userIDs,
-    title,
-    messageText,
-    userID,
-    credential,
-  }: CreateThreadRequest = req.body;
+  const { userIDs, title, messageText, currentUserID }: CreateThreadRequest =
+    req.body;
   const thread = await createThread(userIDs, title, messageText);
   res.send({ data: thread });
 };
 
+/* 
+  @route /api/getMessages
+  @method POST
+  @body { threadID: ThreadID, currentUserID: UserID, pagination?: PaginationArg }
+  @response { data: Paginated<Message> }
+*/
 export const getMessagesRoute = async (req: Request, res: Response) => {
   console.log("getMessages");
-  const { threadID, pagination, userID, credential }: GetMessagesRequest =
-    req.body;
+  const { threadID, pagination, currentUserID }: GetMessagesRequest = req.body;
   const messages = await getMessages(threadID);
   res.send({ data: messages });
 };
 
+/* 
+  @route /api/getThread
+  @method POST
+  @body { threadID: ThreadID, currentUserID: UserID }
+  @response { data: Thread }
+*/
 export const getThreadRoute = async (req: Request, res: Response) => {
   console.log("getThread");
-  const { threadID, userID, credential }: GetThreadRequest = req.body;
+  const { threadID, currentUserID }: GetThreadRequest = req.body;
   const thread = await getThread(threadID);
   res.send({ data: thread });
 };
 
+/* 
+  @route /api/getThreads
+  @method POST
+  @body { inboxName: ThreadFolderName, currentUserID: UserID, pagination?: PaginationArg }
+  @response { data: PaginatedWithCursors<Thread> }
+*/
 export const getThreadsRoute = async (req: Request, res: Response) => {
   console.log("getThreads");
-  const { inboxName, pagination, userID, credential }: GetThreadsRequest =
-    req.body;
+  const { inboxName, pagination, currentUserID }: GetThreadsRequest = req.body;
   const threads = await getThreads(inboxName, pagination);
   res.send({ data: threads });
 };
 
+/* 
+  @route /api/searchUsers
+  @method POST
+  @body { typed: string, currentUserID: UserID }
+  @response { data: User[] }
+*/
 export const searchUsersRoute = async (req: Request, res: Response) => {
   console.log("searchUsers");
-  const { typed, userID, credential }: SearchUsersRequest = req.body;
+  const { typed, currentUserID }: SearchUsersRequest = req.body;
   const users = await searchUsers();
   res.send({ data: users });
 };
@@ -81,6 +113,11 @@ export const searchUsersRoute = async (req: Request, res: Response) => {
   1 - Return the response message in data key of the json response. Which will be state synced in the client.
   2 - Return undefined in data key of the json response, and instead emit a websocket event with the response message,
   using the sendEvent helper function with the userID. So the state is updated in the client.
+ 
+  @route /api/sendMessage
+  @method POST
+  @body { threadID: ThreadID, content: MessageContent, options?: MessageSendOptions, userMessage: Message, currentUserID: UserID }
+  @response { data: undefined | Message } 
 */
 export const sendMessageRoute = async (req: Request, res: Response) => {
   console.log("sendMessage");
@@ -89,8 +126,7 @@ export const sendMessageRoute = async (req: Request, res: Response) => {
     content,
     options,
     userMessage,
-    userID,
-    credential,
+    currentUserID,
   }: SendMessageRequest = req.body;
   const message = await sendMessage(userMessage, threadID, content, options);
 
@@ -121,6 +157,6 @@ export const sendMessageRoute = async (req: Request, res: Response) => {
   
     res.json({ data: undefined });
   */
-  sendEvent(event, userID);
+  sendEvent(event, currentUserID);
   res.send({ data: undefined });
 };

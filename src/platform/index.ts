@@ -1,4 +1,9 @@
+import { randomUUID } from "crypto";
 import {
+  MessageDBInsert,
+  ThreadDBInsert,
+  PaginatedWithCursors,
+  ThreadWithMessagesAndParticipants,
   UserID,
   Thread,
   Message,
@@ -7,23 +12,17 @@ import {
   ThreadID,
   Paginated,
   ThreadFolderName,
-  PaginatedWithCursors,
   User,
   MessageContent,
   MessageSendOptions,
   CurrentUser,
   LoginCreds,
-} from "@textshq/platform-sdk";
-import { randomUUID } from "crypto";
-import {
-  MessageDBInsert,
-  ThreadDBInsert,
-  ThreadWithMessagesAndParticipants,
 } from "../lib/types";
 import { messages, threads, users } from "../db/schema";
 import { db } from "../db";
 import { selectMessages, selectThread, selectThreads } from "../db/repo";
 import {
+  extraMap,
   mapDbMessageToTextsMessage,
   mapDbThreadToTextsThread,
   mapDbUserToTextsUser,
@@ -197,18 +196,30 @@ export async function sendMessage(
 }
 
 /* 
-  Gets the loginCreds, does anything necessary for login and returns the current user
+  Gets the loginCreds, adds the extra fields to a map of <userId,extra> and returns the currentUser
 */
-export function login(creds: LoginCreds): CurrentUser | undefined {
+export function login(
+  creds: LoginCreds,
+  userID: string
+): CurrentUser | undefined {
   if ("custom" in creds) {
     const displayText = creds.custom.label;
-    const user: CurrentUser = {
-      id: randomUUID(),
+    const currentUser: CurrentUser = {
+      id: userID,
       username: "test",
       displayText,
     };
 
-    return user;
+    const extra = creds.custom;
+    delete extra.baseURL;
+
+    if (extra) {
+      extraMap.set(userID, extra);
+    } else {
+      console.log(`No user found with ID ${userID}`);
+    }
+
+    return currentUser;
   } else {
     return undefined;
   }
