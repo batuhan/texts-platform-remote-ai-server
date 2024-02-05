@@ -38,12 +38,17 @@ export const threads = pgTable("threads", {
   createdAt: timestamp("created_at").defaultNow(),
   description: text("description"),
   messageExpirySeconds: integer("message_expiry_seconds"),
+  userID: varchar("user_id"),
   extra: jsonb("extra"),
 });
 
-export const threadsRelations = relations(threads, ({ many }) => ({
+export const threadsRelations = relations(threads, ({ one, many }) => ({
   messages: many(messages),
   participants: many(participants),
+  userID: one(users, {
+    fields: [threads.userID],
+    references: [users.id],
+  }),
 }));
 
 export const messages = pgTable("messages", {
@@ -84,9 +89,11 @@ export const users = pgTable("users", {
   isVerified: boolean("is_verified"),
   cannotMessage: boolean("cannot_message"),
   isSelf: boolean("is_self"),
+  providerID: varchar("provider_id"),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({
+  threads: many(threads),
   participants: many(participants),
 }));
 
