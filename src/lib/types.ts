@@ -60,12 +60,17 @@ export interface LoginRequest extends UserIDProp {
   creds: LoginCreds;
 }
 
+export interface InitRequest {
+  session: SerializedSession;
+}
+
 // Other Types
 // Generics
 export type Paginated<T extends CursorProp> = {
   items: T[];
   hasMore: boolean;
 };
+export type SerializedSession = any;
 export type ID = string;
 export type MessageID = ID;
 export type ThreadID = ID;

@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import http from "http";
 import { ServerEvent } from "./types";
+import { extraMap } from "./helpers";
 
 let wss: WebSocket.Server;
 
@@ -12,10 +13,10 @@ function initWebSocketServer(server: http.Server): WebSocket.Server {
   wss.on("connection", (ws, request) => {
     const userID = request.headers["user-id"] as string;
 
-    if (!userID) {
-      ws.close();
-      return;
-    }
+    // if (!userID) {
+    //   ws.close();
+    //   return;
+    // }
 
     wsMap.set(userID, ws);
     ws.on("message", (message) => {
@@ -24,10 +25,10 @@ function initWebSocketServer(server: http.Server): WebSocket.Server {
 
     ws.on("close", () => {
       wsMap.delete(userID);
+      extraMap.delete(userID);
       console.log("Client disconnected");
     });
   });
-
   return wss;
 }
 

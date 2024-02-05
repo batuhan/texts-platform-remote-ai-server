@@ -1,3 +1,4 @@
+import { AIProviderID, ProviderAPI } from "../platform/lib/types";
 import {
   Message,
   MessageBehavior,
@@ -14,40 +15,33 @@ export function mapDbThreadToTextsThread(
 ) {
   const thread: Thread = {
     id: obj.id,
-    title: obj.title || undefined,
-    isUnread: obj.isUnread || false,
-    lastReadMessageID: obj.lastReadMessageID || undefined,
-    isReadOnly: obj.isReadOnly || false,
-    isArchived: obj.isArchived || undefined,
-    isPinned: obj.isPinned || undefined,
+    title: obj.title === null ? undefined : obj.title,
+    isUnread: obj.isUnread === null ? false : obj.isUnread,
+    lastReadMessageID:
+      obj.lastReadMessageID === null ? undefined : obj.lastReadMessageID,
+    isReadOnly: obj.isReadOnly === null ? false : obj.isReadOnly,
+    isArchived: obj.isArchived === null ? undefined : obj.isArchived,
+    isPinned: obj.isPinned === null ? undefined : obj.isPinned,
     type: obj.type || "single",
-    timestamp: obj.timestamp || undefined,
-    imgURL: obj.imgURL || undefined,
-    createdAt: obj.createdAt || undefined,
-    description: obj.description || undefined,
-    messageExpirySeconds: obj.messageExpirySeconds || undefined,
+    timestamp: obj.timestamp || new Date(),
+    imgURL: obj.imgURL === null ? undefined : obj.imgURL,
+    createdAt: obj.createdAt === null ? undefined : obj.createdAt,
+    description: obj.description === null ? undefined : obj.description,
+    messageExpirySeconds:
+      obj.messageExpirySeconds === null ? undefined : obj.messageExpirySeconds,
     participants: {
       items: obj.participants.map((userId) => {
-        return {
-          id: userId.participants.id,
-          fullName: userId.participants.fullName || undefined,
-          imgURL: userId.participants.imgURL || undefined,
-        };
+        return mapDbUserToTextsUser(userId.participants);
       }),
       hasMore: false,
     },
     messages: {
       items: obj.messages.map((message) => {
-        return {
-          id: message.id,
-          threadID: message.threadID ? message.threadID : undefined,
-          text: message.text ? message.text : undefined,
-          timestamp: message.timestamp ? message.timestamp : new Date(),
-          senderID: message.senderID || "",
-        };
+        return mapDbMessageToTextsMessage(message);
       }),
       hasMore: false,
     },
+    extra: obj.extra || undefined,
   };
 
   return thread;
@@ -57,20 +51,23 @@ export function mapDbMessageToTextsMessage(obj: MessageDBSelect) {
   const message: Message = {
     id: obj.id,
     timestamp: obj.timestamp || new Date(),
-    editedTimestamp: obj.editedTimestamp || undefined,
-    expiresInSeconds: obj.expiresInSeconds || undefined,
-    senderID: obj.senderID || "",
-    text: obj.text || undefined,
-    seen: obj.seen || undefined,
-    threadID: obj.threadID || undefined,
-    isDelivered: obj.isDelivered || undefined,
-    isHidden: obj.isHidden || undefined,
-    isSender: obj.isSender || undefined,
-    isAction: obj.isAction || undefined,
-    isDeleted: obj.isDeleted || undefined,
-    isErrored: obj.isErrored || undefined,
+    editedTimestamp:
+      obj.editedTimestamp === null ? undefined : obj.editedTimestamp,
+    expiresInSeconds:
+      obj.expiresInSeconds === null ? undefined : obj.expiresInSeconds,
+    senderID: obj.senderID === null ? "" : obj.senderID,
+    text: obj.text === null ? undefined : obj.text,
+    seen: obj.seen === null ? undefined : obj.seen,
+    threadID: obj.threadID === null ? undefined : obj.threadID,
+    isDelivered: obj.isDelivered === null ? undefined : obj.isDelivered,
+    isHidden: obj.isHidden === null ? undefined : obj.isHidden,
+    isSender: obj.isSender === null ? undefined : obj.isSender,
+    isAction: obj.isAction === null ? undefined : obj.isAction,
+    isDeleted: obj.isDeleted === null ? undefined : obj.isDeleted,
+    isErrored: obj.isErrored === null ? undefined : obj.isErrored,
     behavior: obj.behavior ? (obj.behavior as MessageBehavior) : undefined,
-    accountID: obj.accountID || undefined,
+    accountID: obj.accountID === null ? undefined : obj.accountID,
+    extra: obj.extra || undefined,
   };
 
   return message;
@@ -79,23 +76,30 @@ export function mapDbMessageToTextsMessage(obj: MessageDBSelect) {
 export function mapDbUserToTextsUser(obj: UserDBSelect) {
   const user: User = {
     id: obj.id,
-    username: obj.username || undefined,
-    phoneNumber: obj.phoneNumber || undefined,
-    email: obj.email || undefined,
-    fullName: obj.fullName || undefined,
-    nickname: obj.nickname || undefined,
-    imgURL: obj.imgURL || undefined,
-    isVerified: obj.isVerified || undefined,
-    cannotMessage: obj.cannotMessage || undefined,
-    isSelf: obj.isSelf || undefined,
+    username: obj.username === null ? undefined : obj.username,
+    phoneNumber: obj.phoneNumber === null ? undefined : obj.phoneNumber,
+    email: obj.email === null ? undefined : obj.email,
+    fullName: obj.fullName === null ? undefined : obj.fullName,
+    nickname: obj.nickname === null ? undefined : obj.nickname,
+    imgURL: obj.imgURL === null ? undefined : obj.imgURL,
+    isVerified: obj.isVerified === null ? undefined : obj.isVerified,
+    cannotMessage: obj.cannotMessage === null ? undefined : obj.cannotMessage,
+    isSelf: obj.isSelf === null ? undefined : obj.isSelf,
   };
 
   return user;
 }
 
-export const extraMap = new Map<string, any>();
+export const extraMap = new Map<
+  string,
+  {
+    providerID: AIProviderID;
+    provider: ProviderAPI;
+    apiKey: string;
+  }
+>();
 
-export function getExtra(userID:UserID){
+export function getExtra(userID: UserID) {
   const extra = extraMap.get(userID);
 
   return extra;
