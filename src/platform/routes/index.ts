@@ -1,26 +1,32 @@
 import { Request, Response } from "express";
 import {
+  ActivityType,
   CreateThreadRequest,
   GetMessagesRequest,
   GetThreadRequest,
   GetThreadsRequest,
+  InitRequest,
   LoginRequest,
   SearchUsersRequest,
   SendMessageRequest,
   ServerEvent,
   ServerEventType,
+  UserID,
 } from "../../lib/types";
 import {
   createThread,
   getMessages,
   getThread,
   getThreads,
+  initUser,
   login,
   searchUsers,
   sendMessage,
 } from "..";
 import { sendEvent } from "../../lib/ws";
-import { getExtra } from "../../lib/helpers";
+import { extraMap, getExtra } from "../../lib/helpers";
+import { AIProviderID } from "../lib/types";
+import { getAIProvider } from "../ai";
 
 /*
   @route /api/login
@@ -31,7 +37,8 @@ import { getExtra } from "../../lib/helpers";
 export const loginRoute = async (req: Request, res: Response) => {
   console.log("login");
   const { creds, currentUserID }: LoginRequest = req.body;
-  const user = login(creds, currentUserID);
+
+  const user = await login(creds, currentUserID);
 
   if (!user) {
     res.status(401).send({ data: undefined });
@@ -39,7 +46,26 @@ export const loginRoute = async (req: Request, res: Response) => {
   }
 
   const extra = getExtra(currentUserID);
-  res.send({ data: { currentUser: user, extra } });
+  const filteredExtra = extra
+    ? { providerID: extra.providerID, apiKey: extra.apiKey }
+    : undefined;
+
+  res.send({ data: { currentUser: user, extra: filteredExtra } });
+};
+
+/* 
+  @route /api/init
+  @method POST
+  @body { session: SerializedSession }
+  @response { data: string }
+*/
+export const initRoute = async (req: Request, res: Response) => {
+  console.log("init");
+  const { session }: InitRequest = req.body;
+
+  initUser(session);
+
+  res.send({ data: "success" });
 };
 
 /* 
@@ -52,7 +78,7 @@ export const createThreadRoute = async (req: Request, res: Response) => {
   console.log("createThread");
   const { userIDs, title, messageText, currentUserID }: CreateThreadRequest =
     req.body;
-  const thread = await createThread(userIDs, title, messageText);
+  const thread = await createThread(userIDs, currentUserID, title, messageText);
   res.send({ data: thread });
 };
 
@@ -65,7 +91,7 @@ export const createThreadRoute = async (req: Request, res: Response) => {
 export const getMessagesRoute = async (req: Request, res: Response) => {
   console.log("getMessages");
   const { threadID, pagination, currentUserID }: GetMessagesRequest = req.body;
-  const messages = await getMessages(threadID);
+  const messages = await getMessages(threadID, currentUserID);
   res.send({ data: messages });
 };
 
@@ -78,7 +104,7 @@ export const getMessagesRoute = async (req: Request, res: Response) => {
 export const getThreadRoute = async (req: Request, res: Response) => {
   console.log("getThread");
   const { threadID, currentUserID }: GetThreadRequest = req.body;
-  const thread = await getThread(threadID);
+  const thread = await getThread(threadID, currentUserID);
   res.send({ data: thread });
 };
 
@@ -91,7 +117,7 @@ export const getThreadRoute = async (req: Request, res: Response) => {
 export const getThreadsRoute = async (req: Request, res: Response) => {
   console.log("getThreads");
   const { inboxName, pagination, currentUserID }: GetThreadsRequest = req.body;
-  const threads = await getThreads(inboxName, pagination);
+  const threads = await getThreads(inboxName, currentUserID, pagination);
   res.send({ data: threads });
 };
 
@@ -104,16 +130,11 @@ export const getThreadsRoute = async (req: Request, res: Response) => {
 export const searchUsersRoute = async (req: Request, res: Response) => {
   console.log("searchUsers");
   const { typed, currentUserID }: SearchUsersRequest = req.body;
-  const users = await searchUsers();
+  const users = await searchUsers(currentUserID);
   res.send({ data: users });
 };
 
 /*
-  There are two ways to return the response message from this route.
-  1 - Return the response message in data key of the json response. Which will be state synced in the client.
-  2 - Return undefined in data key of the json response, and instead emit a websocket event with the response message,
-  using the sendEvent helper function with the userID. So the state is updated in the client.
- 
   @route /api/sendMessage
   @method POST
   @body { threadID: ThreadID, content: MessageContent, options?: MessageSendOptions, userMessage: Message, currentUserID: UserID }
@@ -128,35 +149,18 @@ export const sendMessageRoute = async (req: Request, res: Response) => {
     userMessage,
     currentUserID,
   }: SendMessageRequest = req.body;
-  const message = await sendMessage(userMessage, threadID, content, options);
 
-  const event: ServerEvent = {
+  const userMessageEvent: ServerEvent = {
     type: ServerEventType.STATE_SYNC,
     objectName: "message",
     mutationType: "upsert",
     objectIDs: { threadID },
-    entries: [message],
+    entries: [userMessage],
   };
-  /*
-    Examples of how to return the response message.
 
-    1 - Send back the message, returned in platform-sdk Message type
-    res.json({ data: message });
-  
-    2 - First create a ServerEvent, then send the response message using sendEvent helper function through websocket.
-    Return undefined from this function.
-    const event: ServerEvent = {
-      type: ServerEventType.STATE_SYNC,
-      objectName: "message",
-      mutationType: "upsert",
-      objectIDs: { threadID },
-      entries: [responseMessage],
-    };
+  sendEvent(userMessageEvent, currentUserID);
 
-    sendEvent(event, userID);
-  
-    res.json({ data: undefined });
-  */
-  sendEvent(event, currentUserID);
-  res.send({ data: undefined });
+  await sendMessage(userMessage, threadID, content, currentUserID, options);
+
+  res.send({ data: "success" });
 };

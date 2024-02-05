@@ -17,36 +17,88 @@ import {
   MessageSendOptions,
   CurrentUser,
   LoginCreds,
+  ActivityType,
+  ServerEventType,
+  ServerEvent,
+  SerializedSession,
+  Participant,
+  UserDBInsert,
 } from "../lib/types";
-import { messages, threads, users } from "../db/schema";
+import { messages, participants, threads, users } from "../db/schema";
 import { db } from "../db";
-import { selectMessages, selectThread, selectThreads } from "../db/repo";
+import {
+  selectMessages,
+  selectThread,
+  selectThreads,
+  selectUsers,
+} from "../db/repo";
 import {
   extraMap,
   mapDbMessageToTextsMessage,
   mapDbThreadToTextsThread,
   mapDbUserToTextsUser,
 } from "../lib/helpers";
+import {
+  AIOptions,
+  AIProviderID,
+  ModelType,
+  ModelTypes,
+  PromptType,
+} from "./lib/types";
+import { MODELS } from "./lib/constants";
+import { sendEvent } from "../lib/ws";
+import {
+  aiChatCompletion,
+  aiCompletion,
+  generateTitle,
+  getAIProvider,
+  getCallbacks,
+} from "./ai";
 
 /*
     Creates a thread and returns the created thread
 */
 export async function createThread(
   userIDs: UserID[],
+  currentUserID: UserID,
   title?: string,
   messageText?: string
 ): Promise<Thread> {
-  const userId = userIDs[0];
+  const userID = userIDs[0];
+
+  const extra = extraMap.get(currentUserID);
+
+  if (!extra) {
+    throw new Error(`No extra found for user ${currentUserID}`);
+  }
+
+  const providerID = extra.providerID;
+  const model = MODELS[providerID].find((m) => m.id === userID);
+
+  if (!model) {
+    throw new Error(`No model found for model id ${userID}`);
+  }
 
   const type: ThreadType = "single";
+  const threadID = randomUUID();
+  const threadExtra = {
+    modelID: userID,
+    titleGenerated: false,
+    promptType: model.promptType,
+    modelType: model.modelType,
+    options: model.options,
+  };
 
   const threadCommon = {
-    id: randomUUID(),
+    id: threadID,
     type,
     timestamp: new Date(),
-    title: title || undefined,
+    title: `Chat with ${userID}`,
     isUnread: false,
     isReadOnly: false,
+    extra: threadExtra,
+    userID: currentUserID,
+    imgURL: model.imgURL,
   };
 
   const dbThread: ThreadDBInsert = {
@@ -57,6 +109,29 @@ export async function createThread(
 
   const messages: Message[] = [];
 
+  const aiParticipant: Participant = {
+    id: model.id,
+    fullName: model.fullName,
+    imgURL: model.imgURL,
+    isSelf: false,
+  };
+
+  const userParticipant: Participant = {
+    id: currentUserID,
+    isSelf: true,
+  };
+
+  await db.insert(participants).values([
+    {
+      userID: currentUserID,
+      threadID,
+    },
+    {
+      userID: model.id,
+      threadID,
+    },
+  ]);
+
   const thread: Thread = {
     ...threadCommon,
     messages: {
@@ -65,14 +140,11 @@ export async function createThread(
     },
     participants: {
       hasMore: false,
-      items: [
-        {
-          id: userId,
-        },
-      ],
+      items: [aiParticipant, userParticipant],
     },
     isUnread: false,
     isReadOnly: false,
+    extra: threadExtra,
   };
 
   return thread;
@@ -82,7 +154,8 @@ export async function createThread(
     Gets all messages for a threadID
 */
 export async function getMessages(
-  threadID: string,
+  threadID: ThreadID,
+  currentUserID: UserID,
   pagination?: PaginationArg
 ): Promise<Paginated<Message>> {
   const dbMessages = await selectMessages(threadID);
@@ -105,8 +178,11 @@ export async function getMessages(
 /* 
     Gets a thread by threadID
 */
-export async function getThread(threadID: ThreadID): Promise<Thread> {
-  const dbThread = await selectThread(threadID);
+export async function getThread(
+  threadID: ThreadID,
+  currentUserID: UserID
+): Promise<Thread> {
+  const dbThread = await selectThread(threadID, currentUserID);
   const thread = mapDbThreadToTextsThread(dbThread);
   return thread;
 }
@@ -116,9 +192,10 @@ export async function getThread(threadID: ThreadID): Promise<Thread> {
 */
 export async function getThreads(
   inboxName: ThreadFolderName,
+  currentUserID: UserID,
   pagination?: PaginationArg
 ): Promise<PaginatedWithCursors<Thread>> {
-  const dbThreads = await selectThreads();
+  const dbThreads = await selectThreads(currentUserID);
 
   if (!dbThreads) {
     return {
@@ -127,7 +204,6 @@ export async function getThreads(
       oldestCursor: "0",
     };
   }
-
   const threads = dbThreads.map(
     (threadData: ThreadWithMessagesAndParticipants) => {
       const textsData = mapDbThreadToTextsThread(threadData);
@@ -145,8 +221,8 @@ export async function getThreads(
 /* 
     Returns a list of users available
 */
-export async function searchUsers(): Promise<User[]> {
-  const dbUsers = await db.select().from(users);
+export async function searchUsers(currentUserID: UserID): Promise<User[]> {
+  const dbUsers = await selectUsers(currentUserID);
 
   if (!dbUsers) {
     return [];
@@ -167,60 +243,124 @@ export async function sendMessage(
   userMessage: Message,
   threadID: ThreadID,
   content: MessageContent,
+  currentUserID: UserID,
   options?: MessageSendOptions
-): Promise<Message> {
+): Promise<void> {
+  if (!content.text) {
+    throw new Error("No text in content");
+  }
+
   const dbUserMessage: MessageDBInsert = {
     ...userMessage,
     timestamp: new Date(userMessage.timestamp),
     seen: true,
     threadID,
   };
+  await db.insert(messages).values(dbUserMessage);
 
-  const responseMessage: Message = {
-    id: randomUUID(),
-    timestamp: new Date(),
-    text: `Response`,
-    senderID: "2",
-    isSender: false,
+  const thread = await getThread(threadID, currentUserID);
+
+  const modelID: string = thread.extra.modelID;
+  const modelType: ModelType = thread.extra.modelType;
+  const titleGenerated: boolean = thread.extra.titleGenerated;
+
+  const thinkingEvent: ServerEvent = {
+    type: ServerEventType.USER_ACTIVITY,
+    activityType: ActivityType.CUSTOM,
+    customLabel: "thinking",
     threadID,
+    participantID: modelID,
+    durationMs: 30_000,
   };
 
-  const dbResponseMessage: MessageDBInsert = {
-    ...responseMessage,
-    seen: false,
-  };
+  sendEvent(thinkingEvent, currentUserID);
+  const callbacks = getCallbacks(thread.id, modelID, currentUserID);
 
-  await db.insert(messages).values([dbUserMessage, dbResponseMessage]);
+  if (modelType === ModelTypes.CHAT) {
+    await aiChatCompletion(thread, currentUserID, callbacks);
+  } else if (modelType === ModelTypes.COMPLETION) {
+    await aiCompletion(content.text, thread, currentUserID, callbacks);
+  } else {
+    throw new Error(`Invalid modelType ${modelType}`);
+  }
 
-  return responseMessage;
+  if (!titleGenerated) {
+    generateTitle(content.text, thread, currentUserID);
+  }
+
+  // const aiMessageEvent: ServerEvent = {
+  //   type: ServerEventType.STATE_SYNC,
+  //   objectName: "message",
+  //   mutationType: "upsert",
+  //   objectIDs: { threadID },
+  //   entries: [aiMessage],
+  // };
+  // sendEvent(aiMessageEvent, currentUserID);
+
+  return undefined;
 }
 
 /* 
   Gets the loginCreds, adds the extra fields to a map of <userId,extra> and returns the currentUser
 */
-export function login(
+export async function login(
   creds: LoginCreds,
-  userID: string
-): CurrentUser | undefined {
+  userID: UserID
+): Promise<CurrentUser | undefined> {
   if ("custom" in creds) {
-    const displayText = creds.custom.label;
+    const displayText: string = creds.custom.label;
+    const providerID: AIProviderID = creds.custom.selectedProvider;
+    const apiKey: string = creds.custom.apiKey;
     const currentUser: CurrentUser = {
       id: userID,
-      username: "test",
+      username: "AI Playground",
       displayText,
     };
 
-    const extra = creds.custom;
-    delete extra.baseURL;
+    const user: UserDBInsert = {
+      id: userID,
+      providerID,
+      fullName: "AI Playground",
+      isSelf: true,
+    };
 
-    if (extra) {
-      extraMap.set(userID, extra);
-    } else {
-      console.log(`No user found with ID ${userID}`);
-    }
+    await db.insert(users).values(user);
+
+    const provider = getAIProvider(providerID, apiKey);
+
+    const extra = {
+      providerID: providerID,
+      provider: provider,
+      apiKey,
+    };
+
+    extraMap.set(userID, extra);
 
     return currentUser;
   } else {
     return undefined;
+  }
+}
+
+export function initUser(session: SerializedSession) {
+  const providerID: AIProviderID = session.extra.providerID;
+  const apiKey: string = session.extra.apiKey;
+
+  const userID: UserID = session.currentUser.id;
+
+  const provider = getAIProvider(providerID, apiKey);
+
+  const extra = {
+    providerID: providerID,
+    provider: provider,
+    apiKey,
+  };
+
+  const currentExtra = extraMap.get(userID);
+
+  if (!currentExtra) {
+    extraMap.set(userID, extra);
+  } else {
+    console.log(`No user found with ID ${userID}`);
   }
 }
