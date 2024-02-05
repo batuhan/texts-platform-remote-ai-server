@@ -287,16 +287,6 @@ export async function sendMessage(
   if (!titleGenerated) {
     generateTitle(content.text, thread, currentUserID);
   }
-
-  // const aiMessageEvent: ServerEvent = {
-  //   type: ServerEventType.STATE_SYNC,
-  //   objectName: "message",
-  //   mutationType: "upsert",
-  //   objectIDs: { threadID },
-  //   entries: [aiMessage],
-  // };
-  // sendEvent(aiMessageEvent, currentUserID);
-
   return undefined;
 }
 
