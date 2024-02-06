@@ -1,6 +1,5 @@
 import { HfInference } from "@huggingface/inference";
 import OpenAI from "openai";
-import { ChatCompletionContentPart } from "openai/resources";
 
 export type AIProviderID =
   | "openai"
