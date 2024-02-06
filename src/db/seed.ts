@@ -34,4 +34,12 @@ async function seed() {
   await client.end();
 }
 
-seed();
+seed()
+  .then(() => {
+    console.log("Seeding done.");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("An error occurred:", error);
+    process.exit(1);
+  });

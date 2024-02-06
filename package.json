@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon ./dist/index.js",
+    "start": "npm run seed && nodemon ./dist/index.js",
     "watch": "tsc -w",
     "migrate": "node ./dist/db/migrate.js",
     "generate": "drizzle-kit generate:pg",
