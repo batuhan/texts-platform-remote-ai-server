@@ -1,6 +1,6 @@
 import { db } from ".";
 import { ThreadWithMessagesAndParticipants, UserID } from "../lib/types";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { messages, threads, users } from "./schema";
 import { extraMap } from "../lib/helpers";
 

@@ -39,11 +39,9 @@ import {
   mapDbUserToTextsUser,
 } from "../lib/helpers";
 import {
-  AIOptions,
   AIProviderID,
   ModelType,
   ModelTypes,
-  PromptType,
 } from "./lib/types";
 import { MODELS } from "./lib/constants";
 import { sendEvent } from "../lib/ws";

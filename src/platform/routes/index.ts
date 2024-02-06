@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import {
-  ActivityType,
   CreateThreadRequest,
   GetMessagesRequest,
   GetThreadRequest,
@@ -11,7 +10,6 @@ import {
   SendMessageRequest,
   ServerEvent,
   ServerEventType,
-  UserID,
 } from "../../lib/types";
 import {
   createThread,
@@ -24,9 +22,7 @@ import {
   sendMessage,
 } from "..";
 import { sendEvent } from "../../lib/ws";
-import { extraMap, getExtra } from "../../lib/helpers";
-import { AIProviderID } from "../lib/types";
-import { getAIProvider } from "../ai";
+import { getExtra } from "../../lib/helpers";
 
 /*
   @route /api/login
