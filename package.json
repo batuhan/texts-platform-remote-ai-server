@@ -4,12 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run seed && nodemon ./dist/index.js",
+    "start": "nodemon ./dist/index.js",
+    "build": "tsc",
     "watch": "tsc -w",
     "migrate": "node ./dist/db/migrate.js",
     "generate": "drizzle-kit generate:pg",
-    "seed": "node ./dist/db/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "seed": "node ./dist/db/seed.js"
   },
   "author": "",
   "license": "ISC",
